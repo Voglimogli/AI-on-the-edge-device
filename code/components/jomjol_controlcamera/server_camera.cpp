@@ -106,17 +106,8 @@ esp_err_t handler_capture(httpd_req_t *req)
 
     if (Camera.getCameraInitSuccessful())
     {
-        // If the camera settings were changed by creating a new reference image, they must be reset
-        if (CFstatus.changedCameraSettings)
-        {
-            Camera.setSensorDatenFromCCstatus(); // CCstatus >>> Kamera
-            Camera.SetQualityZoomSize(CCstatus.ImageQuality, CCstatus.ImageFrameSize, CCstatus.ImageZoomEnabled, CCstatus.ImageZoomOffsetX, CCstatus.ImageZoomOffsetY, CCstatus.ImageZoomSize, CCstatus.ImageVflip);
-            Camera.LedIntensity = CCstatus.ImageLedIntensity;
-            CFstatus.changedCameraSettings = false;
-        }
-
 #ifdef DEBUG_DETAIL_ON
-        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.ImageFrameSize, CCstatus.ImageQuality);
+        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.CamConfig.ImageFrameSize, CCstatus.CamConfig.ImageQuality);
 #endif        
 
         esp_err_t result;
@@ -165,17 +156,8 @@ esp_err_t handler_capture_with_light(httpd_req_t *req)
             }
         }
 
-        // If the camera settings were changed by creating a new reference image, they must be reset
-        if (CFstatus.changedCameraSettings)
-        {
-            Camera.setSensorDatenFromCCstatus(); // CCstatus >>> Kamera
-            Camera.SetQualityZoomSize(CCstatus.ImageQuality, CCstatus.ImageFrameSize, CCstatus.ImageZoomEnabled, CCstatus.ImageZoomOffsetX, CCstatus.ImageZoomOffsetY, CCstatus.ImageZoomSize, CCstatus.ImageVflip);
-            Camera.LedIntensity = CCstatus.ImageLedIntensity;
-            CFstatus.changedCameraSettings = false;
-        }
-
 #ifdef DEBUG_DETAIL_ON
-        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.ImageFrameSize, CCstatus.ImageQuality);
+        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.CamConfig.ImageFrameSize, CCstatus.CamConfig.ImageQuality);
 #endif        
 
         Camera.LightOnOff(true);
@@ -248,17 +230,8 @@ esp_err_t handler_capture_save_to_file(httpd_req_t *req)
             fn.append("noname.jpg");
         }
 
-        // If the camera settings were changed by creating a new reference image, they must be reset
-        if (CFstatus.changedCameraSettings)
-        {
-            Camera.setSensorDatenFromCCstatus(); // CCstatus >>> Kamera
-            Camera.SetQualityZoomSize(CCstatus.ImageQuality, CCstatus.ImageFrameSize, CCstatus.ImageZoomEnabled, CCstatus.ImageZoomOffsetX, CCstatus.ImageZoomOffsetY, CCstatus.ImageZoomSize, CCstatus.ImageVflip);
-            Camera.LedIntensity = CCstatus.ImageLedIntensity;
-            CFstatus.changedCameraSettings = false;
-        }
-
 #ifdef DEBUG_DETAIL_ON
-        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.ImageFrameSize, CCstatus.ImageQuality);
+        ESP_LOGD(TAG, "Size: %d, Quality: %d", CCstatus.CamConfig.ImageFrameSize, CCstatus.CamConfig.ImageQuality);
 #endif        
 
         esp_err_t result;
