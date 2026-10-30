@@ -13,6 +13,8 @@
 #include "esp_vfs_fat.h"
 #include "ffconf.h"
 #include "driver/sdmmc_host.h"
+#include "driver/sdspi_host.h"
+#include "driver/spi_common.h"
 
 #include "ClassLogFile.h"
 
@@ -100,6 +102,35 @@ bool Init_NVS_SDCard()
         ret = nvs_flash_init();
     }
 
+#ifdef SD_USE_SPI_MODE
+    ESP_LOGD(TAG, "Using SPI peripheral for SD card");
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.slot = SPI2_HOST;
+    host.max_freq_khz = SDMMC_FREQ_DEFAULT; // 20 MHz
+
+    spi_bus_config_t bus_cfg = {};
+    bus_cfg.mosi_io_num = GPIO_SDCARD_SPI_MOSI;
+    bus_cfg.miso_io_num = GPIO_SDCARD_SPI_MISO;
+    bus_cfg.sclk_io_num = GPIO_SDCARD_SPI_CLK;
+    bus_cfg.quadwp_io_num = -1;
+    bus_cfg.quadhd_io_num = -1;
+    bus_cfg.max_transfer_sz = 4000;
+
+    // MISO needs a pull-up for SD cards in SPI mode
+    gpio_set_pull_mode(GPIO_SDCARD_SPI_MISO, GPIO_PULLUP_ONLY);
+    gpio_set_pull_mode(GPIO_SDCARD_SPI_CS, GPIO_PULLUP_ONLY);
+
+    ret = spi_bus_initialize((spi_host_device_t)host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus for SD card (0x%x)", ret);
+        return false;
+    }
+
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    slot_config.gpio_cs = GPIO_SDCARD_SPI_CS;
+    slot_config.host_id = (spi_host_device_t)host.slot;
+#else
     ESP_LOGD(TAG, "Using SDMMC peripheral");
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -161,6 +192,7 @@ bool Init_NVS_SDCard()
     // zu Problemen mit der SD Initialisierung und eventuell sogar zur reboot-loops.
     // Um diese Probleme zu kompensieren, wird der PullUp manuel gesetzt.
     gpio_set_pull_mode(GPIO_SDCARD_D3, GPIO_PULLUP_ONLY); // HS2_D3
+#endif // SD_USE_SPI_MODE
 
     // Options for mounting the filesystem.
     // If format_if_mount_failed is set to true, SD card will be partitioned and
@@ -179,7 +211,11 @@ bool Init_NVS_SDCard()
     // Note: esp_vfs_fat_sdmmc_mount is an all-in-one convenience function.
     // Please check its source code and implement error recovery when developing
     // production applications.
+#ifdef SD_USE_SPI_MODE
+    ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+#else
     ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);
+#endif
 
     if (ret != ESP_OK)
     {

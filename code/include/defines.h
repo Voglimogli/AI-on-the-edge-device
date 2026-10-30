@@ -308,6 +308,41 @@
     #define FLASH_GPIO GPIO_NUM_4               // PIN for flashlight LED
     #define USE_PWM_LEDFLASH                    // if __LEDGLOBAL is defined, a global variable is used for LED control, otherwise locally and each time a new
 
+#elif defined(BOARD_ESP32_OV5640_UICPAL) // ESP32-D0WD board "OV5640 REV1.2.1" (CH340X, IP5306, TF slot, OV5640 AF)
+    // The camera occupies GPIO 2/12/14/15 (the fixed SDMMC pins of the ESP32),
+    // so the TF slot is wired to other pins and must be driven in SPI mode.
+    #define SD_USE_SPI_MODE
+    #define GPIO_SDCARD_SPI_MOSI GPIO_NUM_19   // TF CMD
+    #define GPIO_SDCARD_SPI_MISO GPIO_NUM_13   // TF DAT0
+    #define GPIO_SDCARD_SPI_CLK  GPIO_NUM_4    // TF CLK
+    #define GPIO_SDCARD_SPI_CS   GPIO_NUM_21   // TF DAT3
+    #define GPIO_SDCARD_D3       GPIO_SDCARD_SPI_CS
+
+    #define CAM_PIN_PWDN     GPIO_NUM_NC
+    #define CAM_PIN_RESET    GPIO_NUM_5
+    #define CAM_PIN_XCLK     GPIO_NUM_15
+    #define CAM_PIN_SIOD     GPIO_NUM_22
+    #define CAM_PIN_SIOC     GPIO_NUM_23
+
+    #define CAM_PIN_D7       GPIO_NUM_39   // Y9
+    #define CAM_PIN_D6       GPIO_NUM_34   // Y8
+    #define CAM_PIN_D5       GPIO_NUM_33   // Y7
+    #define CAM_PIN_D4       GPIO_NUM_27   // Y6
+    #define CAM_PIN_D3       GPIO_NUM_12   // Y5
+    #define CAM_PIN_D2       GPIO_NUM_35   // Y4
+    #define CAM_PIN_D1       GPIO_NUM_14   // Y3
+    #define CAM_PIN_D0       GPIO_NUM_2    // Y2
+    #define CAM_PIN_VSYNC    GPIO_NUM_18
+    #define CAM_PIN_HREF     GPIO_NUM_36
+    #define CAM_PIN_PCLK     GPIO_NUM_26
+
+    //Statusled + ClassControllCamera
+    #define BLINK_GPIO GPIO_NUM_25              // on-board LED
+
+    //ClassControllCamera
+    #define FLASH_GPIO GPIO_NUM_32              // no flash LED on board: connect an external LED (via transistor) to IO32
+    #define USE_PWM_LEDFLASH
+
 #else
     #error "Board not selected"
 #endif  //Board PIN Map
