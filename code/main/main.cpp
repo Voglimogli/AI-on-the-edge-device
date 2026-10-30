@@ -228,8 +228,8 @@ bool Init_NVS_SDCard()
     // production applications.
 #ifdef SD_USE_SPI_MODE
     {
-        // Long/shared SD lines on some boards are not reliable at 20 MHz: step the clock down if needed
-        const int freqs_khz[] = {SDMMC_FREQ_DEFAULT, 10000, 5000, 2000};
+        // The TF lines on this board share IO4/IO13 with the charger IC: 5 MHz and above gives CRC errors at runtime
+        const int freqs_khz[] = {2000, 1000, 400};
         for (int f : freqs_khz)
         {
             ret = mountSdCardSpi(mount_point, &mount_config, GPIO_SDCARD_SPI_MOSI, GPIO_SDCARD_SPI_MISO,
