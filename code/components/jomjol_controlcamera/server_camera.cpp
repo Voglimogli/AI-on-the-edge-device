@@ -26,8 +26,9 @@ void PowerResetCamera()
     else
     {
         ESP_LOGD(TAG, "Resetting camera by power down line");
+        const int pwdn_pin = CAM_PIN_PWDN; // runtime value, avoids a negative constant shift on boards without PWDN
         gpio_config_t conf = {
-            .pin_bit_mask = 1LL << CAM_PIN_PWDN,
+            .pin_bit_mask = 1ULL << pwdn_pin,
             .mode = GPIO_MODE_OUTPUT,
             .pull_up_en = GPIO_PULLUP_DISABLE,
             .pull_down_en = GPIO_PULLDOWN_DISABLE,
