@@ -93,13 +93,12 @@ static const char *TAG = "MAIN";
 #define MOUNT_POINT "/sdcard"
 
 #ifdef SD_USE_SPI_MODE
-#include <algorithm>
 static esp_err_t mountSdCardSpi(const char *mount_point, const esp_vfs_fat_sdmmc_mount_config_t *mount_config,
-                                int mosi, int miso, int clk, int cs, sdmmc_card_t **card)
+                                int mosi, int miso, int clk, int cs, int freq_khz, sdmmc_card_t **card)
 {
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.slot = SPI2_HOST;
-    host.max_freq_khz = SDMMC_FREQ_DEFAULT; // 20 MHz
+    host.max_freq_khz = freq_khz;
 
     spi_bus_config_t bus_cfg = {};
     bus_cfg.mosi_io_num = mosi;
@@ -228,26 +227,20 @@ bool Init_NVS_SDCard()
     // Please check its source code and implement error recovery when developing
     // production applications.
 #ifdef SD_USE_SPI_MODE
-    ret = mountSdCardSpi(mount_point, &mount_config, GPIO_SDCARD_SPI_MOSI, GPIO_SDCARD_SPI_MISO,
-                         GPIO_SDCARD_SPI_CLK, GPIO_SDCARD_SPI_CS, &card);
-    if (ret != ESP_OK)
     {
-        // Board documentation is unreliable: probe all assignments of the four candidate pins
-        ESP_LOGW(TAG, "SD card not found with default SPI pins (0x%x), probing other pin assignments...", ret);
-        const int cand[4] = {GPIO_SDCARD_SPI_MOSI, GPIO_SDCARD_SPI_MISO, GPIO_SDCARD_SPI_CLK, GPIO_SDCARD_SPI_CS};
-        int idx[4] = {0, 1, 2, 3};
-        do
+        // Long/shared SD lines on some boards are not reliable at 20 MHz: step the clock down if needed
+        const int freqs_khz[] = {SDMMC_FREQ_DEFAULT, 10000, 5000, 2000};
+        for (int f : freqs_khz)
         {
-            if (idx[0] == 0 && idx[1] == 1 && idx[2] == 2 && idx[3] == 3)
-                continue; // default already tried
-            ESP_LOGI(TAG, "SD probe: MOSI=%d MISO=%d CLK=%d CS=%d", cand[idx[0]], cand[idx[1]], cand[idx[2]], cand[idx[3]]);
-            ret = mountSdCardSpi(mount_point, &mount_config, cand[idx[0]], cand[idx[1]], cand[idx[2]], cand[idx[3]], &card);
+            ret = mountSdCardSpi(mount_point, &mount_config, GPIO_SDCARD_SPI_MOSI, GPIO_SDCARD_SPI_MISO,
+                                 GPIO_SDCARD_SPI_CLK, GPIO_SDCARD_SPI_CS, f, &card);
             if (ret == ESP_OK)
             {
-                ESP_LOGW(TAG, "SD card FOUND with MOSI=%d MISO=%d CLK=%d CS=%d", cand[idx[0]], cand[idx[1]], cand[idx[2]], cand[idx[3]]);
+                ESP_LOGI(TAG, "SD card mounted in SPI mode at %d kHz", f);
                 break;
             }
-        } while (std::next_permutation(idx, idx + 4));
+            ESP_LOGW(TAG, "SD card mount failed at %d kHz (0x%x)", f, ret);
+        }
     }
 #else
     ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);

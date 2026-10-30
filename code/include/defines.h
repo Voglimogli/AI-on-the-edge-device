@@ -312,10 +312,11 @@
     // The camera occupies GPIO 2/12/14/15 (the fixed SDMMC pins of the ESP32),
     // so the TF slot is wired to other pins and must be driven in SPI mode.
     #define SD_USE_SPI_MODE
-    #define GPIO_SDCARD_SPI_MOSI GPIO_NUM_19   // TF CMD
+    // Found by probing on real hardware (the seller table has CMD/DAT3 swapped)
+    #define GPIO_SDCARD_SPI_MOSI GPIO_NUM_21   // TF CMD
     #define GPIO_SDCARD_SPI_MISO GPIO_NUM_13   // TF DAT0
     #define GPIO_SDCARD_SPI_CLK  GPIO_NUM_4    // TF CLK
-    #define GPIO_SDCARD_SPI_CS   GPIO_NUM_21   // TF DAT3
+    #define GPIO_SDCARD_SPI_CS   GPIO_NUM_19   // TF DAT3
     #define GPIO_SDCARD_D3       GPIO_SDCARD_SPI_CS
 
     #define CAM_PIN_PWDN     GPIO_NUM_NC
